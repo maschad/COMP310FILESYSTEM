@@ -1,6 +1,6 @@
 #define MAXFILENAME 13
 
-int mksfs(int fresh);
+void mksfs(int fresh);
 int sfs_fopen(char *name);
 int sfs_fclose(int fileID);
 int sfs_fwrite(int fileID, const char *buf, int length);
