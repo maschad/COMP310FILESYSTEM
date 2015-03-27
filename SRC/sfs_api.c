@@ -3,14 +3,13 @@
 #include <string.h>
 #include <unistd.h>
 #include <time.h>
-#include "disk_emu.h"
 #include "disk_emu.c"
 
 // need some structure to define blocks on disk 
 typedef struct{
 	char *name ;
 	int i_index;
-	int pointers[12];// it confuses me why this is nessecary
+	int pointers[12];// it confuses me why this is nessessary
 }file; 
 
 
@@ -24,7 +23,6 @@ typedef struct{
 	int pointers[13];
 }i_node;
 
-
 typedef struct{
 	int magic;
 	int block;
@@ -37,8 +35,6 @@ typedef struct{
 	int used;
 	int useless[12];// i dont know why but i will get a segmentation fault without this everytime
 }block_map;
-
-
 
 typedef struct{
 	char *name;
@@ -59,9 +55,12 @@ super_block s_block;
 file directory[100];
 i_node i_table[100];
 block_map freeblocks[500];
-int dir_pointer;
-int block_size;
 des_entry des_table[100];
+
+
+
+int dir_pointer;// pointer to directory
+int block_size;
 int a[5];
 int w;
 char * hello;
@@ -69,12 +68,12 @@ char * moto;
 
 int max ( int a, int b ) { return a > b ? a : b; }
 
-int mksfs(int new){
+int mksfs(int fresh){
 	
-	if(new==1){
+	if(fresh==1){
 		empty_file.i_index = -1;
 		empty_des_entry.dir_index = -1;
-		//now I do not have to worry about the root directory being larger the 1 block, it is alwasy eqaul to or less then this size
+		//now I do not have to worry about the root directory being larger the 1 block, it is always equal to or less then this size
 
 		block_size = max(sizeof(i_table), (max( sizeof(directory),sizeof(freeblocks))));
 			
@@ -83,8 +82,8 @@ int mksfs(int new){
 		s_block.block= block_size;
 		s_block.magic = 2864381957;// this is what 0xAABB0005 is in decimal
 		s_block.file_system_size = 500;
-		s_block.i_node_length = 1; // guarenteed
-		s_block.root_directory = 2; // by definition, i-node number = block numbe
+		s_block.i_node_length = 1; // Guaranteed
+		s_block.root_directory = 2; // by definition, i-node number = block number
 		
 		
 
@@ -128,15 +127,14 @@ int mksfs(int new){
         	write_blocks(499,1,(void *)&freeblocks);
 		
 	}
- 
- else{ 	
-	init_disk("disk.txt",s_block.block,500);
-	read_blocks(0,1,(void *)&s_block);
-	read_blocks(1,1,(void *)&i_table  );
-	read_blocks(2,1,(void *)&directory);	
-       	read_blocks(500-1,1,(void *)&freeblocks);
 
-	
+	 else
+	 {
+		init_disk("disk.txt",s_block.block,500);
+		read_blocks(0,1,(void *)&s_block);
+		read_blocks(1,1,(void *)&i_table  );
+		read_blocks(2,1,(void *)&directory);
+		read_blocks(500-1,1,(void *)&freeblocks);
       }
 return 0;
 }
@@ -161,7 +159,6 @@ int sfs_get_next_filename(char *fname){
 return 2;
 }
 
-
 int sfs_GetFileSize(char const *path){
 	char *pos = strrchr(path, '\\');
 	pos++;
@@ -176,7 +173,6 @@ int sfs_GetFileSize(char const *path){
 			}	
 		}
 	}
-
 
 int sfs_fopen(char *name){ 
 	
@@ -271,7 +267,6 @@ int sfs_fclose( int fileID){
 	}
 
 }
-
 
 int sfs_fwrite(int  fileID,  const char  * buf,  int  length){//  as implied in the assignmnet you can only write to the end of the file" So if you are writing to an existing file, it is important you readthe last block and set the write pointer to the end "
 	
@@ -430,8 +425,6 @@ int sfs_fseek(int fileID, int loc){
 
 	}
 }
-
-
 int sfs_remove( char * name){
 	int fileID = exists(name);
 	int dir = root_exists2(name);
@@ -439,7 +432,7 @@ int sfs_remove( char * name){
 
 	 
 	if( fileID ==-1 || dir ==-1 || i_ID ==-1) return 	-1 ;		
-	if( fileID> 100){printf("out of bounds");return;}
+	if( fileID> 100){printf("out of bounds");return -1;}
 	else{
 			
 			empty_des_entry.dir_index = -1;
@@ -449,7 +442,7 @@ int sfs_remove( char * name){
 
 
 	
-	if( dir> 100){printf("out of bounds");return;}
+	if( dir> 100){printf("out of bounds");return -1;}
 	else{	
 			empty_file.pointers[0]=-1;
 			directory[dir] = empty_file;
@@ -483,51 +476,6 @@ return 0;
 
 
 }
-
-
-	
-
-
-
-
-//int main(void) {
-
-//mksfs(1);
-//sfs_fopen("file.c");
-//sfs_fopen("fire.c");
-
-
-// hello = "hello moto";
-//printf("%s space ", hello);
-//sfs_fwrite(0, hello, strlen(hello));
-//write_blocks(3,1,(void *)&hello);
-//moto= ( char * )malloc( sizeof(s_block.block));
-
-//printf("%s space ", moto);
-
-
-//sfs_fread(w,(void *)&moto, strlen(moto));
-
-
-//printf("%s space ", moto);
-
-
-//directory[0].name= "work please";
-//sfs_fread(2, (void *)&directory, sizeof(directory));
-
-//for( w = 0; w<100; w++){
-//printf("%s",directory[w].name);}
-//}
-
-
-
-
-
-//sfs_fclose(0);
-//sfs_remove("file.c");
-//return 0;
-//}
-
 int exists( char *name){// returns the entry int the file descriptor place if exists or 100 else 
 	int i = 0;
 	while(1){
@@ -539,8 +487,6 @@ int exists( char *name){// returns the entry int the file descriptor place if ex
 		}	
 	}
 }
-
-
 int root_exists( char *name){// returns the  directory place if exists or 100 else 
 
 	int i = 0;
@@ -565,7 +511,6 @@ int root_exists2( char *name){// returns the  directory place if exists or 100 e
 		}	
 	}
 }
-
 int new_block(){
 
 	int i = 0; 
